@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useThemeStore } from './store/themeStore'
 
@@ -25,33 +25,31 @@ function App() {
 
   useEffect(() => {
     initTheme()
-  }, [])
+  }, [initTheme])
 
   return (
-    <BrowserRouter>
-      <div className={isDark ? 'dark' : ''}>
-        <div className="min-h-screen bg-light dark:bg-dark transition-colors duration-300">
-          <Navbar />
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/menu" element={<Menu />} />
-              <Route path="/product/:id" element={<ProductDetail />} />
-              <Route path="/cart" element={<Cart />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-          <Footer />
-          <Toaster position="top-right" />
-        </div>
+    <div className={isDark ? 'dark' : ''}>
+      <div className="min-h-screen bg-light dark:bg-dark transition-colors duration-300">
+        <Navbar />
+        <main className="flex-1">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/menu" element={<Menu />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+        <Footer />
+        <Toaster position="top-right" />
       </div>
-    </BrowserRouter>
+    </div>
   )
 }
 

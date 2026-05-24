@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Modal from '../Common/Modal'
 import Button from '../Common/Button'
 import { formatPrice } from '../../utils/helpers'
+import FoodImage from '../Common/FoodImage'
 
 export const ProductQuickView = ({ product, isOpen, onClose, onAddToCart }) => {
   const [quantity, setQuantity] = useState(1)
@@ -30,9 +31,11 @@ export const ProductQuickView = ({ product, isOpen, onClose, onAddToCart }) => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
         >
-          <img
+          <FoodImage
             src={product.image}
             alt={product.name}
+            productId={product.id}
+            category={product.category}
             className="w-full h-80 object-cover rounded-lg"
           />
         </motion.div>

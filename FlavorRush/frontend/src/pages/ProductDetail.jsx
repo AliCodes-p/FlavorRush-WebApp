@@ -1,176 +1,237 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { ArrowLeft, Clock, Flame, Star } from 'lucide-react'
 import { useCartStore } from '../store/cartStore'
-import { dummyProducts } from '../data/dummyData'
+import { getProductById } from '../utils/products'
 import { formatPrice, getSpiceEmoji } from '../utils/helpers'
 import Button from '../components/Common/Button'
-import Badge from '../components/Common/Badge'
-import Rating from '../components/Common/Rating'
+import FoodImage from '../components/Common/FoodImage'
 import toast from 'react-hot-toast'
 
 export const ProductDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const [product, setProduct] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const [selectedCustomizations, setSelectedCustomizations] = useState({})
   const [userRating, setUserRating] = useState(0)
   const { addToCart } = useCartStore()
 
   useEffect(() => {
-    const found = dummyProducts.find(p => p.id === parseInt(id))
+    setLoading(true)
+    setNotFound(false)
+    const found = getProductById(id)
     if (found) {
       setProduct(found)
+      setNotFound(false)
     } else {
-      navigate('/menu')
+      setProduct(null)
+      setNotFound(true)
     }
-  }, [id, navigate])
+    setLoading(false)
+  }, [id])
 
   const handleAddToCart = () => {
+    if (!product) return
     addToCart(product, quantity, selectedCustomizations)
     toast.success(`${product.name} added to cart!`)
   }
 
-  if (!product) return null
-
   const customizationOptions = {
     size: ['Small', 'Medium', 'Large'],
-    cheese: [{ label: 'No Cheese', value: 0 }, { label: 'Single', value: 50 }, { label: 'Double', value: 100 }],
+    cheese: [
+      { label: 'No Cheese', value: 0 },
+      { label: 'Single', value: 50 },
+      { label: 'Double', value: 100 },
+    ],
     sauce: ['Mayo', 'Mustard', 'BBQ', 'Mix'],
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[var(--surface)] text-[var(--ink)] pt-28 pb-16 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-2 border-[#FF5722] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500 dark:text-gray-400">Loading dish details…</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (notFound || !product) {
+    return (
+      <div className="min-h-screen bg-[var(--surface)] text-[var(--ink)] pt-28 pb-16 px-4 flex flex-col items-center justify-center text-center">
+        <p className="text-2xl font-semibold mb-2">Dish not found</p>
+        <p className="text-gray-500 dark:text-gray-400 mb-6">
+          We couldn&apos;t find a menu item with that ID.
+        </p>
+        <Link
+          to="/menu"
+          className="inline-flex items-center gap-2 h-11 px-6 rounded-xl grad-bg text-white font-semibold"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to menu
+        </Link>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-light dark:bg-dark text-gray-900 dark:text-white pt-8">
+    <div className="min-h-screen bg-[var(--surface)] text-[var(--ink)] pt-24 md:pt-28 pb-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
-        <motion.div
+        <motion.nav
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="mb-8 flex items-center gap-2 text-gray-600 dark:text-gray-400"
+          className="mb-8 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400"
         >
-          <button onClick={() => navigate('/menu')} className="hover:text-primary">Menu</button>
+          <Link to="/menu" className="hover:text-[#FF5722] transition-colors flex items-center gap-1">
+            <ArrowLeft className="w-4 h-4" />
+            Menu
+          </Link>
           <span>/</span>
-          <span className="text-primary font-semibold">{product.name}</span>
-        </motion.div>
+          <span className="text-[#FF5722] font-semibold">{product.name}</span>
+        </motion.nav>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
-          {/* Image Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-14 mb-16">
+          {/* Image */}
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             className="relative"
           >
-            <div className="bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden sticky top-24">
-              <img
+            <div className="card overflow-hidden sticky top-28">
+              <FoodImage
                 src={product.image}
                 alt={product.name}
-                className="w-full h-96 object-cover"
+                productId={product.id}
+                category={product.category}
+                className="w-full aspect-square md:aspect-[4/5] object-cover"
               />
-              <div className="absolute top-4 left-4 flex gap-2">
-                {product.bestseller && <Badge variant="warning">⭐ Bestseller</Badge>}
-                {product.isSpicy && <Badge variant="danger">🌶️ Spicy</Badge>}
+              <div className="absolute top-4 left-4 flex gap-2 flex-wrap">
+                {product.bestseller && (
+                  <span className="px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-bold">
+                    Bestseller
+                  </span>
+                )}
+                {product.isSpicy && (
+                  <span className="px-3 py-1 rounded-full bg-red-500 text-white text-xs font-bold flex items-center gap-1">
+                    <Flame className="w-3 h-3" />
+                    Spicy
+                  </span>
+                )}
               </div>
             </div>
           </motion.div>
 
-          {/* Details Section */}
+          {/* Details */}
           <motion.div
-            initial={{ opacity: 0, x: 50 }}
+            initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             className="space-y-6"
           >
-            {/* Title and Description */}
             <div>
-              <h1 className="text-4xl font-bold mb-3">{product.name}</h1>
-              <p className="text-gray-600 dark:text-gray-400 text-lg">{product.description}</p>
+              <p className="text-sm font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 capitalize">
+                {product.category}
+              </p>
+              <h1 className="font-display text-4xl md:text-5xl tracking-[-0.03em] text-gray-900 dark:text-white mb-3">
+                {product.name}
+              </h1>
+              <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
+                {product.description}
+              </p>
             </div>
 
-            {/* Rating and Reviews */}
-            <div className="flex items-center gap-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex flex-wrap items-center gap-4 pb-4 border-b border-black/8 dark:border-white/10">
               <div className="flex items-center gap-2">
-                <span className="text-3xl">⭐</span>
+                <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
                 <span className="text-2xl font-bold">{product.rating}</span>
               </div>
-              <p className="text-gray-600 dark:text-gray-400">
-                Based on {product.reviews} reviews
+              <p className="text-gray-500 dark:text-gray-400">
+                {product.reviews} reviews
               </p>
+              <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-sm">
+                <Clock className="w-4 h-4" />
+                {product.prepTime}
+              </span>
             </div>
 
             {/* Ingredients */}
             <div>
-              <h3 className="font-bold text-lg mb-3">🥘 Ingredients</h3>
+              <h2 className="font-semibold text-lg mb-3 text-gray-900 dark:text-white">
+                Ingredients
+              </h2>
               <div className="flex flex-wrap gap-2">
                 {product.ingredients.map((ingredient, idx) => (
-                  <motion.span
+                  <span
                     key={idx}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="bg-primary bg-opacity-20 text-primary px-3 py-1 rounded-full text-sm font-semibold"
+                    className="px-3 py-1 rounded-full bg-[#FF5722]/10 text-[#FF5722] text-sm font-medium"
                   >
                     {ingredient}
-                  </motion.span>
+                  </span>
                 ))}
               </div>
             </div>
 
             {/* Nutrition */}
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-              <h3 className="font-bold text-lg mb-3">📊 Nutrition (per serving)</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Calories</p>
-                  <p className="text-xl font-bold">{product.nutrition.calories}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Protein</p>
-                  <p className="text-xl font-bold">{product.nutrition.protein}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Fat</p>
-                  <p className="text-xl font-bold">{product.nutrition.fat}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Carbs</p>
-                  <p className="text-xl font-bold">{product.nutrition.carbs}</p>
-                </div>
+            <div className="card p-5">
+              <h2 className="font-semibold text-lg mb-3 text-gray-900 dark:text-white">
+                Nutrition (per serving)
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {Object.entries(product.nutrition).map(([key, value]) => (
+                  <div key={key}>
+                    <p className="text-xs uppercase text-gray-400 dark:text-gray-500 capitalize">
+                      {key}
+                    </p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{value}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Spice Level */}
             {product.isSpicy && (
               <div>
-                <h3 className="font-bold text-lg mb-2">Spice Level</h3>
-                <div className="text-lg">
-                  {getSpiceEmoji(product.spiceLevel)}
-                  <span className="ml-2">({product.spiceLevel}/5)</span>
-                </div>
+                <h2 className="font-semibold text-lg mb-2">Spice level</h2>
+                <p className="text-lg">
+                  {getSpiceEmoji(product.spiceLevel)}{' '}
+                  <span className="text-gray-500">({product.spiceLevel}/5)</span>
+                </p>
               </div>
             )}
 
             {/* Customizations */}
-            <div className="space-y-4 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-              <h3 className="font-bold text-lg">🎨 Customize</h3>
+            <div className="card p-5 space-y-4">
+              <h2 className="font-semibold text-lg text-gray-900 dark:text-white">
+                Customize your order
+              </h2>
               {Object.entries(customizationOptions).map(([key, options]) => (
                 <div key={key}>
-                  <label className="block font-semibold mb-2 capitalize">{key}</label>
+                  <label className="block font-medium mb-2 capitalize text-gray-700 dark:text-gray-300">
+                    {key}
+                  </label>
                   <div className="flex gap-2 flex-wrap">
                     {options.map((option, idx) => {
                       const value = typeof option === 'string' ? option : option.label
+                      const selected = selectedCustomizations[key] === value
                       return (
-                        <motion.button
+                        <button
                           key={idx}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => setSelectedCustomizations(prev => ({ ...prev, [key]: value }))}
-                          className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                            selectedCustomizations[key] === value
-                              ? 'bg-primary text-white'
-                              : 'bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600'
+                          type="button"
+                          onClick={() =>
+                            setSelectedCustomizations((prev) => ({ ...prev, [key]: value }))
+                          }
+                          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                            selected
+                              ? 'grad-bg text-white'
+                              : 'border border-black/10 dark:border-white/15 bg-[var(--card)] text-[var(--ink)]'
                           }`}
                         >
                           {value}
-                        </motion.button>
+                        </button>
                       )
                     })}
                   </div>
@@ -180,106 +241,73 @@ export const ProductDetail = () => {
 
             {/* Quantity */}
             <div className="flex items-center gap-4">
-              <span className="font-semibold text-lg">Quantity:</span>
-              <div className="flex items-center gap-4 bg-gray-100 dark:bg-gray-800 rounded-lg p-2">
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
+              <span className="font-semibold">Quantity</span>
+              <div className="flex items-center gap-3 card px-2 py-1">
+                <button
+                  type="button"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-4 py-2 text-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-all"
+                  className="w-10 h-10 rounded-lg font-bold hover:bg-black/5 dark:hover:bg-white/10"
                 >
                   −
-                </motion.button>
-                <span className="px-6 py-2 text-xl font-bold">{quantity}</span>
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
+                </button>
+                <span className="w-8 text-center font-bold text-lg">{quantity}</span>
+                <button
+                  type="button"
                   onClick={() => setQuantity(quantity + 1)}
-                  className="px-4 py-2 text-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-all"
+                  className="w-10 h-10 rounded-lg font-bold hover:bg-black/5 dark:hover:bg-white/10"
                 >
                   +
-                </motion.button>
+                </button>
               </div>
             </div>
 
-            {/* Price and Add to Cart */}
-            <div className="flex items-center justify-between bg-gradient-primary text-white rounded-lg p-4 mt-8">
+            {/* Price + CTA */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl grad-bg p-5 text-white">
               <div>
-                <p className="text-sm opacity-90">Total Price</p>
+                <p className="text-sm opacity-90">Total</p>
                 <p className="text-3xl font-bold">{formatPrice(product.price * quantity)}</p>
               </div>
               <Button
                 size="lg"
-                variant="secondary"
                 onClick={handleAddToCart}
-                className="bg-white text-primary hover:bg-gray-100"
+                className="!bg-white !text-[#FF5722] hover:!bg-gray-100 w-full sm:w-auto"
               >
-                🛒 Add to Cart
+                Add to cart
               </Button>
             </div>
           </motion.div>
         </div>
 
-        {/* Reviews Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mb-16"
-        >
-          <h2 className="text-3xl font-bold mb-6">📝 Reviews</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {Array(3).fill(0).map((_, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md"
+        {/* Reviews placeholder */}
+        <section className="card p-6">
+          <h2 className="font-display text-2xl mb-4 text-gray-900 dark:text-white">
+            Customer reviews
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
+            Rated {product.rating} from {product.reviews} orders — leave your review below.
+          </p>
+          <div className="flex gap-1 mb-4">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setUserRating(star)}
+                className="text-2xl"
+                aria-label={`Rate ${star} stars`}
               >
-                <div className="flex items-center gap-3 mb-3">
-                  <img
-                    src={`https://i.pravatar.cc/150?img=${idx}`}
-                    alt="Reviewer"
-                    className="w-10 h-10 rounded-full"
-                  />
-                  <div>
-                    <p className="font-semibold">Customer {idx + 1}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">2 days ago</p>
-                  </div>
-                </div>
-                <Rating value={5} readonly size="sm" />
-                <p className="mt-3 text-gray-600 dark:text-gray-400">
-                  Great taste and fresh delivery. Highly recommended!
-                </p>
-              </motion.div>
+                {star <= userRating ? '★' : '☆'}
+              </button>
             ))}
           </div>
-
-          {/* Add Review */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-8 bg-gray-50 dark:bg-gray-800 rounded-lg p-6"
-          >
-            <h3 className="font-bold text-lg mb-4">Share Your Experience</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block font-semibold mb-2">Your Rating</label>
-                <Rating value={userRating} onChange={setUserRating} size="lg" />
-              </div>
-              <div>
-                <label className="block font-semibold mb-2">Your Review</label>
-                <textarea
-                  placeholder="Tell us what you think..."
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary"
-                  rows="4"
-                ></textarea>
-              </div>
-              <Button size="md">✍️ Submit Review</Button>
-            </div>
-          </motion.div>
-        </motion.div>
+          <textarea
+            placeholder="Share your experience…"
+            rows={3}
+            className="w-full px-4 py-3 rounded-xl border border-black/10 dark:border-white/15 bg-[var(--card)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[#FF5722]/40 mb-3"
+          />
+          <Button size="md" variant="primary">
+            Submit review
+          </Button>
+        </section>
       </div>
     </div>
   )

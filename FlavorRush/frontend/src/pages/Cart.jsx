@@ -5,6 +5,7 @@ import { useCartStore } from '../store/cartStore'
 import { formatPrice } from '../utils/helpers'
 import Button from '../components/Common/Button'
 import toast from 'react-hot-toast'
+import FoodImage from '../components/Common/FoodImage'
 
 export const Cart = () => {
   const { items, removeFromCart, updateQuantity, clearCart, getTotal } = useCartStore()
@@ -77,9 +78,11 @@ export const Cart = () => {
                 transition={{ delay: idx * 0.05 }}
                 className="bg-white dark:bg-gray-800 rounded-lg p-4 flex gap-4 shadow-md hover:shadow-lg transition-all"
               >
-                <img
+                <FoodImage
                   src={item.image}
                   alt={item.name}
+                  productId={item.id}
+                  category={item.category}
                   className="w-24 h-24 object-cover rounded-lg"
                 />
                 <div className="flex-1">
