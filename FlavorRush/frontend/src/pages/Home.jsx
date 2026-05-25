@@ -25,14 +25,11 @@ import { useCartStore } from "../store/cartStore";
 import FoodCard from "../components/FoodCard/FoodCard";
 import FoodImage from "../components/Common/FoodImage";
 import { FOOD_IMAGES } from "../utils/foodImages";
-import {
-  dummyProducts,
-  categories,
-  testimonials,
-  promotions,
-} from "../data/dummyData";
+import { categories, testimonials, promotions } from "../data/dummyData";
 import Button from "../components/Common/Button";
 import toast from "react-hot-toast";
+import { productsAPI } from "../utils/api";
+import { normalizeProduct } from "../utils/products";
 
 /* ─── Constants ──────────────────────────────────────────── */
 const TICKER = [
@@ -178,7 +175,31 @@ export const Home = () => {
   const smoothY = useSpring(heroY, { stiffness: 80, damping: 25 });
 
   useEffect(() => {
-    setFeaturedProducts(dummyProducts.filter((p) => p.bestseller).slice(0, 6));
+    let mounted = true;
+
+    const loadFeaturedProducts = async () => {
+      try {
+        const response = await productsAPI.getAll();
+        if (mounted) {
+          setFeaturedProducts(
+            (response.data || [])
+              .map(normalizeProduct)
+              .filter((product) => product.bestseller)
+              .slice(0, 6),
+          );
+        }
+      } catch {
+        if (mounted) {
+          setFeaturedProducts([]);
+        }
+      }
+    };
+
+    loadFeaturedProducts();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleAddToCart = (product) => {
@@ -318,10 +339,10 @@ export const Home = () => {
               className="relative w-[380px] h-[380px] rounded-[40px] overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.18)]"
             >
               <FoodImage
-                src={dummyProducts[0]?.image || FOOD_IMAGES.hero}
+                src={featuredProducts[0]?.image || FOOD_IMAGES.hero}
                 alt="Featured dish"
-                productId={1}
-                category="burgers"
+                productId={featuredProducts[0]?.id || 1}
+                category={featuredProducts[0]?.category || "burgers"}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent" />

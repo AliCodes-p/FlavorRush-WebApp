@@ -12,6 +12,7 @@ def search_products():
     return controller.search()
 
 
+@products_bp.get('')
 @products_bp.get('/')
 def get_products():
     return controller.get_all()

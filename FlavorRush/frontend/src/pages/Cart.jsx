@@ -1,33 +1,45 @@
-import { motion } from 'framer-motion'
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useCartStore } from '../store/cartStore'
-import { formatPrice } from '../utils/helpers'
-import Button from '../components/Common/Button'
-import toast from 'react-hot-toast'
-import FoodImage from '../components/Common/FoodImage'
+import { motion } from "framer-motion";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
+
+import FoodImage from "../components/Common/FoodImage";
+import Button from "../components/Common/Button";
+import { useCartStore } from "../store/cartStore";
+import { formatPrice } from "../utils/helpers";
 
 export const Cart = () => {
-  const { items, removeFromCart, updateQuantity, clearCart, getTotal } = useCartStore()
-  const [promoCode, setPromoCode] = useState('')
-  const [discount, setDiscount] = useState(0)
+  const { items, removeFromCart, updateQuantity, clearCart, getTotal } =
+    useCartStore();
+  const [promoCode, setPromoCode] = useState("");
+  const [discount, setDiscount] = useState(0);
 
   const handleApplyPromo = () => {
-    if (promoCode.toUpperCase() === 'FIRST50') {
-      setDiscount(getTotal() * 0.5)
-      toast.success('Promo code applied!')
-    } else if (promoCode.toUpperCase() === 'SAVE10') {
-      setDiscount(getTotal() * 0.1)
-      toast.success('Promo code applied!')
+    if (promoCode.toUpperCase() === "FIRST50") {
+      setDiscount(getTotal() * 0.5);
+      toast.success("Promo code applied!");
+    } else if (promoCode.toUpperCase() === "SAVE10") {
+      setDiscount(getTotal() * 0.1);
+      toast.success("Promo code applied!");
     } else {
-      toast.error('Invalid promo code')
+      toast.error("Invalid promo code");
     }
-  }
+  };
 
-  const subtotal = getTotal()
-  const tax = Math.round((subtotal - discount) * 0.05)
-  const delivery = subtotal > 500 ? 0 : 40
-  const total = subtotal - discount + tax + delivery
+  const handleRemove = async (item) => {
+    await removeFromCart(item.id, item.customizations);
+    toast.success("Item removed");
+  };
+
+  const handleClearCart = async () => {
+    await clearCart();
+    toast.success("Cart cleared");
+  };
+
+  const subtotal = getTotal();
+  const tax = Math.round((subtotal - discount) * 0.05);
+  const delivery = subtotal > 500 ? 0 : 40;
+  const total = subtotal - discount + tax + delivery;
 
   if (items.length === 0) {
     return (
@@ -49,7 +61,7 @@ export const Cart = () => {
           </motion.div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -64,7 +76,6 @@ export const Cart = () => {
         </motion.h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart Items */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
@@ -72,7 +83,7 @@ export const Cart = () => {
           >
             {items.map((item, idx) => (
               <motion.div
-                key={idx}
+                key={`${item.id}-${item.backendId ?? idx}`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.05 }}
@@ -88,16 +99,25 @@ export const Cart = () => {
                 <div className="flex-1">
                   <h3 className="font-bold text-lg">{item.name}</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    {Object.entries(item.customizations || {}).map(([k, v]) => `${k}: ${v}`).join(', ') || 'Standard'}
+                    {Object.entries(item.customizations || {})
+                      .map(([key, value]) => `${key}: ${value}`)
+                      .join(", ") || "Standard"}
                   </p>
-                  <p className="text-primary font-semibold">{formatPrice(item.price)}</p>
+                  <p className="text-primary font-semibold">
+                    {formatPrice(item.price)}
+                  </p>
                 </div>
 
-                {/* Quantity Controls */}
                 <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-700 rounded-lg p-2">
                   <motion.button
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => updateQuantity(item.id, item.customizations, Math.max(1, item.quantity - 1))}
+                    onClick={async () => {
+                      await updateQuantity(
+                        item.id,
+                        item.customizations,
+                        Math.max(1, item.quantity - 1),
+                      );
+                    }}
                     className="px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                   >
                     −
@@ -105,14 +125,19 @@ export const Cart = () => {
                   <span className="px-3 font-semibold">{item.quantity}</span>
                   <motion.button
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => updateQuantity(item.id, item.customizations, item.quantity + 1)}
+                    onClick={async () => {
+                      await updateQuantity(
+                        item.id,
+                        item.customizations,
+                        item.quantity + 1,
+                      );
+                    }}
                     className="px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                   >
                     +
                   </motion.button>
                 </div>
 
-                {/* Total */}
                 <div className="text-right">
                   <p className="text-lg font-bold">
                     {formatPrice(item.price * item.quantity)}
@@ -120,7 +145,7 @@ export const Cart = () => {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => removeFromCart(item.id, item.customizations)}
+                    onClick={() => handleRemove(item)}
                     className="text-danger hover:text-red-700 text-sm font-semibold mt-2"
                   >
                     Remove
@@ -129,7 +154,6 @@ export const Cart = () => {
               </motion.div>
             ))}
 
-            {/* Continue Shopping */}
             <Link to="/menu">
               <motion.button
                 whileHover={{ scale: 1.02 }}
@@ -140,7 +164,6 @@ export const Cart = () => {
             </Link>
           </motion.div>
 
-          {/* Order Summary */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
@@ -149,9 +172,10 @@ export const Cart = () => {
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg space-y-4">
               <h2 className="text-2xl font-bold">Order Summary</h2>
 
-              {/* Promo Code */}
               <div className="space-y-2">
-                <label className="block font-semibold text-sm">Promo Code</label>
+                <label className="block font-semibold text-sm">
+                  Promo Code
+                </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -168,10 +192,11 @@ export const Cart = () => {
                     Apply
                   </motion.button>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Try: FIRST50, SAVE10</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Try: FIRST50, SAVE10
+                </p>
               </div>
 
-              {/* Breakdown */}
               <div className="space-y-2 border-t border-b border-gray-200 dark:border-gray-700 py-4">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
@@ -189,28 +214,24 @@ export const Cart = () => {
                 </div>
                 <div className="flex justify-between">
                   <span>Delivery</span>
-                  <span>{delivery === 0 ? 'FREE 🎉' : formatPrice(delivery)}</span>
+                  <span>
+                    {delivery === 0 ? "FREE 🎉" : formatPrice(delivery)}
+                  </span>
                 </div>
               </div>
 
-              {/* Total */}
               <div className="flex justify-between items-center text-2xl font-bold bg-gradient-primary bg-opacity-10 text-primary rounded-lg p-4">
                 <span>Total</span>
                 <span>{formatPrice(total)}</span>
               </div>
 
-              {/* Checkout Button */}
               <Link to="/checkout">
                 <Button size="full">🚀 Proceed to Checkout</Button>
               </Link>
 
-              {/* Clear Cart */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
-                onClick={() => {
-                  clearCart()
-                  toast.success('Cart cleared')
-                }}
+                onClick={handleClearCart}
                 className="w-full py-2 text-danger hover:bg-danger hover:bg-opacity-10 rounded-lg font-semibold transition-all"
               >
                 🗑️ Clear Cart
@@ -220,7 +241,7 @@ export const Cart = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Cart
+export default Cart;

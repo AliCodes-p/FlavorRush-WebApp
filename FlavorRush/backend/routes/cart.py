@@ -6,6 +6,7 @@ cart_bp = Blueprint('cart', __name__)
 controller = CartController()
 
 
+@cart_bp.get('')
 @cart_bp.get('/')
 def get_cart():
     return controller.get_cart()
@@ -26,6 +27,7 @@ def remove_item(item_id):
     return controller.remove_item(item_id)
 
 
+@cart_bp.delete('')
 @cart_bp.delete('/')
 def clear_cart():
     return controller.clear_cart()

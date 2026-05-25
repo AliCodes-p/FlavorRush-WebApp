@@ -41,7 +41,10 @@ class AuthController:
 
     def profile(self):
         user_id = get_jwt_identity()
-        return {'id': user_id}, 200
+        result, error = self.service.get_profile(user_id)
+        if error:
+            return error_response(error, 400)
+        return result, 200
 
     def update_profile(self):
         user_id = get_jwt_identity()
